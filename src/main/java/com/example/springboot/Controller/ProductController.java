@@ -9,11 +9,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.sql.PreparedStatement;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 public class ProductController {
@@ -31,6 +34,13 @@ public class ProductController {
 
     @GetMapping("/products")
     public ResponseEntity<List<ProductModel>> getAllProducts(){
+        List<ProductModel> productList = productRepository.findAll();
+        if(!productList.isEmpty()){
+            for (ProductModel product: productList){
+                UUID id = product.getIdProduct();
+                product.add(linkTo(methodOn(ProductController.class).getOneProduct(id)).withSelfRel());
+            }
+        }
         return  ResponseEntity.status(HttpStatus.OK).body(productRepository.findAll());
     }
 
@@ -41,6 +51,8 @@ public class ProductController {
         if (productO.isEmpty()){
             return  ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product not Found");
         }
+
+        productO.get().add(linkTo(methodOn(ProductController.class).getAllProducts()).withSelfRel());
         return  ResponseEntity.status(HttpStatus.OK).body(productO.get());
     }
 
